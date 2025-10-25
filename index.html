@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Калькулятор середнього балу</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* ===== БУРГЕР-МЕНЮ ===== */
+    .menu {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 250px;
+      height: 100vh;
+      background: #333;
+      color: #fff;
+      transform: translateX(-100%);
+      transition: transform 0.3s;
+      padding: 1rem;
+      z-index: 10;
+    }
+
+    .menu.is-open {
+      transform: translateX(0);
+    }
+
+    .menu ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .menu li {
+      margin: 1rem 0;
+      cursor: pointer;
+    }
+
+    .menu li.is-active {
+      font-weight: bold;
+      text-decoration: underline;
+    }
+
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 5;
+    }
+
+    .overlay.is-open {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    button {
+      cursor: pointer;
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+    }
+
+    main {
+      padding: 1rem;
+    }
+
+    /* ===== МОДАЛЬНЕ ВІКНО ===== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 20;
+    }
+
+    .modal-overlay.is-open {
+      display: flex;
+    }
+
+    .modal {
+      background: #fff;
+      padding: 1rem 1.5rem;
+      border-radius: 8px;
+      width: 300px;
+      max-width: 90%;
+    }
+
+    .modal h2 {
+      margin-top: 0;
+    }
+
+    .modal small.error {
+      color: red;
+      display: block;
+      margin-top: 4px;
+    }
+
+    body.no-scroll {
+      overflow: hidden;
+    }
+
+    /* ===== ТАБИ ===== */
+    .tabs {
+      margin-top: 2rem;
+    }
+
+    .tab-buttons {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .tab-buttons button.is-active {
+      background: #333;
+      color: #fff;
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.is-active {
+      display: block;
+    }
+
+    .status {
+      margin-top: 1rem;
+      font-style: italic;
+      color: #555;
+    }
+
+    .grades li {
+      margin: 0.25rem 0;
+    }
+
+    .average {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: #007700;
+      margin-top: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button id="menuToggle">Відкрити меню</button>
+  </header>
+
+  <nav class="menu" id="menu">
+    <ul id="menuItems">
+      <li class="is-active">Головна</li>
+      <li>Про калькулятор</li>
+      <li>Контакти</li>
+    </ul>
+  </nav>
+  <div class="overlay" id="overlay"></div>
+
+  <main>
+    <h1>Калькулятор середнього балу</h1>
+    <button id="openModalBtn">Додати оцінку</button>
+
+    <div class="tabs" id="tabs">
+      <div class="tab-buttons">
+        <button data-tab="all" class="is-active">Усі оцінки</button>
+        <button data-tab="high">Високі (10-12)</button>
+        <button data-tab="low">Низькі (1-6)</button>
+      </div>
+
+      <div class="tab-panel is-active" data-panel="all">
+        <ul class="grades" id="allGrades"></ul>
+      </div>
+      <div class="tab-panel" data-panel="high">
+        <ul class="grades" id="highGrades"></ul>
+      </div>
+      <div class="tab-panel" data-panel="low">
+        <ul class="grades" id="lowGrades"></ul>
+      </div>
+
+      <p class="status" id="statusText">Показано: Усі оцінки</p>
+      <div class="average" id="averageScore">Середній бал: —</div>
+    </div>
+  </main>
+
+  <!-- ===== МОДАЛКА ===== -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal" role="dialog" aria-modal="true">
+      <h2>Додати оцінку</h2>
+      <input type="number" id="gradeInput" placeholder="Введіть оцінку (1–12)" min="1" max="12" />
+      <small class="error" id="errorMsg"></small>
+      <div style="margin-top:1rem; display:flex; gap:0.5rem; justify-content:flex-end;">
+        <button id="saveGradeBtn">Зберегти</button>
+        <button id="cancelModalBtn">Скасувати</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer>
+    // ======= БУРГЕР-МЕНЮ =======
+    const menuToggle = document.querySelector('#menuToggle');
+    const menu = document.querySelector('#menu');
+    const overlay = document.querySelector('#overlay');
+    const menuItems = document.querySelectorAll('#menuItems li');
+
+    function openMenu() {
+      menu.classList.add('is-open');
+      overlay.classList.add('is-open');
+      document.body.classList.add('no-scroll');
+      menuToggle.textContent = 'Закрити меню';
+    }
+
+    function closeMenu() {
+      menu.classList.remove('is-open');
+      overlay.classList.remove('is-open');
+      document.body.classList.remove('no-scroll');
+      menuToggle.textContent = 'Відкрити меню';
+      for (const item of menuItems) item.classList.remove('is-active');
+    }
+
+    function toggleMenu() {
+      if (menu.classList.contains('is-open')) {
+        closeMenu();
+      } else {
+        openMenu();
+      }
+    }
+
+    menuToggle.addEventListener('click', toggleMenu);
+
+    overlay.addEventListener('click', () => {
+      if (menu.classList.contains('is-open')) closeMenu();
+      if (modalOverlay.classList.contains('is-open')) closeModal();
+    });
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        closeMenu();
+        closeModal();
+      }
+      if ((e.key === 'Enter' || e.key === ' ') && document.activeElement === menuToggle) {
+        e.preventDefault();
+        toggleMenu();
+      }
+    });
+
+    // ======= МОДАЛКА =======
+    const modalOverlay = document.querySelector('#modalOverlay');
+    const openModalBtn = document.querySelector('#openModalBtn');
+    const cancelModalBtn = document.querySelector('#cancelModalBtn');
+    const saveGradeBtn = document.querySelector('#saveGradeBtn');
+    const gradeInput = document.querySelector('#gradeInput');
+    const errorMsg = document.querySelector('#errorMsg');
+    const allGrades = document.querySelector('#allGrades');
+    const highGrades = document.querySelector('#highGrades');
+    const lowGrades = document.querySelector('#lowGrades');
+    const averageScore = document.querySelector('#averageScore');
+
+    const grades = [];
+
+    function openModal() {
+      modalOverlay.classList.add('is-open');
+      document.body.classList.add('no-scroll');
+      setTimeout(() => gradeInput.focus(), 100);
+    }
+
+    function closeModal() {
+      modalOverlay.classList.remove('is-open');
+      document.body.classList.remove('no-scroll');
+      errorMsg.textContent = '';
+      gradeInput.value = '';
+      openModalBtn.focus();
+    }
+
+    openModalBtn.addEventListener('click', openModal);
+    cancelModalBtn.addEventListener('click', closeModal);
+
+    saveGradeBtn.addEventListener('click', () => {
+      const value = parseInt(gradeInput.value.trim());
+      if (isNaN(value) || value < 1 || value > 12) {
+        errorMsg.textContent = 'Введіть число від 1 до 12.';
+        return;
+      }
+
+      grades.push(value);
+      updateGrades();
+      activateTab('all');
+      closeModal();
+    });
+
+    function updateGrades() {
+      allGrades.innerHTML = '';
+      highGrades.innerHTML = '';
+      lowGrades.innerHTML = '';
+
+      let sum = 0;
+      for (const g of grades) {
+        const li = document.createElement('li');
+        li.textContent = g;
+        allGrades.appendChild(li);
+        if (g >= 10) {
+          const li2 = document.createElement('li');
+          li2.textContent = g;
+          highGrades.appendChild(li2);
+        }
+        if (g <= 6) {
+          const li3 = document.createElement('li');
+          li3.textContent = g;
+          lowGrades.appendChild(li3);
+        }
+        sum += g;
+      }
+
+      const avg = grades.length ? (sum / grades.length).toFixed(2) : '—';
+      averageScore.textContent = `Середній бал: ${avg}`;
+    }
+
+    // ======= ТАБИ =======
+    const tabButtons = document.querySelectorAll('.tab-buttons button');
+    const tabPanels = document.querySelectorAll('.tab-panel');
+    const statusText = document.querySelector('#statusText');
+
+    function activateTab(name) {
+      for (const btn of tabButtons) {
+        btn.classList.toggle('is-active', btn.dataset.tab === name);
+      }
+      for (const panel of tabPanels) {
+        panel.classList.toggle('is-active', panel.dataset.panel === name);
+      }
+      const label = [...tabButtons].find(b => b.dataset.tab === name).textContent;
+      statusText.textContent = `Показано: ${label}`;
+    }
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => activateTab(btn.dataset.tab));
+    });
+
+    document.addEventListener('keydown', e => {
+      const focusedIndex = [...tabButtons].indexOf(document.activeElement);
+      if (focusedIndex !== -1) {
+        if (e.key === 'ArrowRight') {
+          e.preventDefault();
+          const next = (focusedIndex + 1) % tabButtons.length;
+          tabButtons[next].focus();
+        } else if (e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const prev = (focusedIndex - 1 + tabButtons.length) % tabButtons.length;
+          tabButtons[prev].focus();
+        } else if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          activateTab(document.activeElement.dataset.tab);
+        }
+      }
+    });
+  </script>
+</body>
+</html>
