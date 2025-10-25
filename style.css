@@ -1,0 +1,143 @@
+body {
+  font-family: sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== БУРГЕР-МЕНЮ ===== */
+.menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 250px;
+  height: 100vh;
+  background: #333;
+  color: #fff;
+  transform: translateX(-100%);
+  transition: transform 0.3s;
+  padding: 1rem;
+  z-index: 10;
+}
+
+.menu.is-open {
+  transform: translateX(0);
+}
+
+.menu ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.menu li {
+  margin: 1rem 0;
+  cursor: pointer;
+}
+
+.menu li.is-active {
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  z-index: 5;
+}
+
+.overlay.is-open {
+  opacity: 1;
+  pointer-events: all;
+}
+
+button {
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+}
+
+main {
+  padding: 1rem;
+}
+
+/* ===== МОДАЛЬНЕ ВІКНО ===== */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+}
+
+.modal-overlay.is-open {
+  display: flex;
+}
+
+.modal {
+  background: #fff;
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  width: 300px;
+  max-width: 90%;
+}
+
+.modal h2 {
+  margin-top: 0;
+}
+
+.modal small.error {
+  color: red;
+  display: block;
+  margin-top: 4px;
+}
+
+body.no-scroll {
+  overflow: hidden;
+}
+
+/* ===== ТАБИ ===== */
+.tabs {
+  margin-top: 2rem;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.tab-buttons button.is-active {
+  background: #333;
+  color: #fff;
+}
+
+.tab-panel {
+  display: none;
+}
+
+.tab-panel.is-active {
+  display: block;
+}
+
+.status {
+  margin-top: 1rem;
+  font-style: italic;
+  color: #555;
+}
+
+.grades li {
+  margin: 0.25rem 0;
+}
+
+.average {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #007700;
+  margin-top: 1rem;
+}
